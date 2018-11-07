@@ -4,6 +4,6 @@
   :license  "MIT"
   :version "0.0.1"
   :serial t
-  :depends-on (#:cl-who)
+  :depends-on (#:cl-who #:parenscript)
   :components ((:file "package")
                (:file "ackyak.github.io")))
