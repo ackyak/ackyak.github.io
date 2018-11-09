@@ -38,10 +38,10 @@ function cursorClick(event) {
     direction = -direction;
     cursorX = event.clientX;
     cursorY = event.clientY;
-    var _js5 = colorB;
-    var _js6 = colorA;
-    colorA = _js5;
-    colorB = _js6;
+    var _js1 = colorB;
+    var _js2 = colorA;
+    colorA = _js1;
+    colorB = _js2;
     canvas.style.backgroundColor = colorA;
     return undefined;
 };
@@ -59,8 +59,8 @@ function cursorClick(event) {
     };
     var recur = function (timeout) {
         return setTimeout(function () {
-            var _ps_incr_place8 = direction * ((boost /= 1.01) + 1 / (1000 - time));
-            time += _ps_incr_place8;
+            var _ps_incr_place4 = direction * ((boost /= 1.01) + 1 / (1000 - time));
+            time += _ps_incr_place4;
             drawTree(time, 0, 100, startX, startY);
             return recur(timeout);
         }, timeout);
