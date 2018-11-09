@@ -1,24 +1,26 @@
-var canvas = document.getElementById('virtual-paint-stirring-machine');
-var context = canvas.getContext('2d');
-var date = new Date();
-var time = date.getSeconds();
-var boost = 0;
-var width = window.innerWidth;
-var height = window.innerHeight;
-var startX = width / 2;
-var startY = height / 2;
-var cursorX;
-var cursorY;
-var direction = 1;
-var colorA = '#FFF';
-var colorB = '#000';
-function clamp(l, m, h) {
-    return l < m ? Math.min(m, h) : Math.max(l, m);
+var DATE = new Date();
+var TIME = DATE.getSeconds();
+var BOOST = 0;
+var DIRECTION = 1;
+var COLORA = '#FFF';
+var COLORB = '#000';
+var CANVAS = document.getElementById('virtual-paint-stirring-machine');
+var CONTEXT = CANVAS.getContext('2d');
+var WIDTH = window.innerWidth;
+var HEIGHT = window.innerHeight;
+var FRAMERATE = 100 * (1 / 60);
+CANVAS.width = WIDTH;
+CANVAS.height = HEIGHT;
+/** Return the N unless it is less than LOWER or greater than UPPER. */
+function clamp(lower, n, upper) {
+    return lower < n ? Math.min(n, upper) : lower;
 };
+/** The sigmoid of N. */
 function sig(n) {
     return 1 / (Math.exp(-n) + 1);
 };
-function line(context, x1, y1, x2, y2, color) {
+/** Draw a line from the point (X1, Y1) to (X2, Y2). */
+function drawLine(context, x1, y1, x2, y2, color) {
     context.beginPath();
     context.moveTo(x1, y1);
     context.lineTo(x2, y2);
@@ -26,48 +28,50 @@ function line(context, x1, y1, x2, y2, color) {
     context.stroke();
     return undefined;
 };
-function point(context, x, y, radius, color) {
+/** Draw a dot at the point (X, Y). */
+function drawDot(context, x, y, radius, color) {
     context.beginPath();
     context.arc(x, y, radius, 0, 2 * Math.PI);
     context.fillStyle = color;
     context.fill();
     return undefined;
 };
-function cursorClick(event) {
-    boost += 0.003;
-    direction = -direction;
-    cursorX = event.clientX;
-    cursorY = event.clientY;
-    var _js1 = colorB;
-    var _js2 = colorA;
-    colorA = _js1;
-    colorB = _js2;
-    canvas.style.backgroundColor = colorA;
+/**
+ * Invert the background and current drawing colours, and
+ * reverse the flow of `*TIME*'.
+ */
+function invertThings(event) {
+    BOOST += 0.003;
+    DIRECTION = -DIRECTION;
+    var _js1 = COLORB;
+    var _js2 = COLORA;
+    COLORA = _js1;
+    COLORB = _js2;
+    CANVAS.style.backgroundColor = COLORA;
     return undefined;
 };
-(function () {
-    var drawTree = function (time, g, r, x1, y1, x2, y2) {
-        if (r >= 1) {
-            if (r < 5) {
-                line(context, x1, y1, x2, y2, colorB);
-                point(context, x1, y1, 1 / r, colorA);
-            };
-            return [Math.sin(time / 1.2) * Math.tan(Math.cos(time / 1.3)), Math.cos(time / 1.5) * sig(Math.sin(time / 1.7))].map(function (x) {
-                return drawTree(time, g + x, r / 1.6, ((x1 + 40 * Math.cos(40 * sig(Math.cos(g)))) + (x1 - 20 * Math.cos(time) - 20 * Math.sin(g))) / 2, ((y1 + 40 * Math.cos(40 * sig(Math.sin(g)))) + (y1 - 20 * Math.sin(time) - 20 * Math.cos(g))) / 2, x1, y1);
-            });
+/**
+ * Draw a tree rooted at the point (X1, Y1) and shaped based on
+ * TIME. n.b. the magic numbers are all chosen based on what looked good.
+ */
+function drawTree(time, offset, depth, currentX, currentY, prevX, prevY) {
+    if (depth >= 1) {
+        if (depth < 5) {
+            drawLine(CONTEXT, currentX, currentY, prevX, prevY, COLORB);
+            drawDot(CONTEXT, currentX, currentY, 1 / depth, COLORA);
         };
+        return [Math.sin(time / 1.2) * Math.tan(Math.cos(time / 1.3)), Math.cos(time / 1.5) * sig(Math.sin(time / 1.7))].map(function (x) {
+            return drawTree(time, offset + x, depth / 1.6, 0.5 * ((currentX + 40 * Math.cos(40 * sig(Math.cos(offset)))) + (currentX - 20 * Math.cos(time) - 20 * Math.sin(offset))), 0.5 * ((currentY + 40 * Math.cos(40 * sig(Math.sin(offset)))) + (currentY - 20 * Math.sin(time) - 20 * Math.cos(offset))), currentX, currentY);
+        });
     };
-    var recur = function (timeout) {
-        return setTimeout(function () {
-            var _ps_incr_place4 = direction * ((boost /= 1.01) + 1 / (1000 - time));
-            time += _ps_incr_place4;
-            drawTree(time, 0, 100, startX, startY);
-            return recur(timeout);
-        }, timeout);
-    };
-    canvas.width = width;
-    canvas.height = height;
-    cursorX = startX;
-    cursorY = startY;
-    return recur(100 * (1 / 60));
-})();
+};
+/** Draw a tree with DRAW-TREE then recur after TIMEOUT (milliseconds). */
+function drawingLoop(timeout) {
+    return setTimeout(function () {
+        var _ps_incr_place3 = DIRECTION * ((BOOST /= 1.01) + 1 / (1000 - TIME));
+        TIME += _ps_incr_place3;
+        drawTree(TIME, 0, 100, WIDTH / 2, HEIGHT / 2);
+        return drawingLoop(timeout);
+    }, timeout);
+};
+drawingLoop(FRAMERATE);
