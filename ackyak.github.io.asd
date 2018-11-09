@@ -1,7 +1,7 @@
 ;;;; ackyak.github.io.asd
 
 (asdf:defsystem #:ackyak.github.io
-  :license  "MIT"
+  :license  "LLGPL"
   :version "0.0.1"
   :serial t
   :depends-on (#:cl-who #:parenscript)

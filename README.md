@@ -4,4 +4,5 @@ A simple website.
 
 ## License
 
-MIT
+LLGPL
+
