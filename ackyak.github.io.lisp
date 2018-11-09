@@ -2,29 +2,6 @@
 
 (in-package #:ackyak.github.io)
 
-(defpsmacro line (context x1 y1 x2 y2 color)
-  `(progn
-     ((@ ,context begin-path))
-     ((@ ,context move-to) ,x1 ,y1)
-     ((@ ,context line-to) ,x2 ,y2)
-     (setf (@ ,context stroke-style) ,color)
-     ((@ ,context stroke))))
-
-(defpsmacro point (context x y radius color)
-  `(progn
-     ((@ ,context begin-path))
-     ((@ ,context arc) ,x ,y ,radius 0 (* 2 pi))
-     (setf (@ ,context fill-style) ,color)
-     ((@ ,context fill))))
-
-(defpsmacro sig (x)
-  `(/ (1+ (exp (- ,x)))))
-
-(defpsmacro clamp (l m h)
-  `(if (< ,l ,m)
-       (min ,m ,h)
-       (max ,l ,m)))
-
 (defun render-script (stream)
   (let ((*js-string-delimiter*  #\'))
     (ps-to-stream stream
@@ -43,6 +20,29 @@
       (defvar color-a "#FFF")
       (defvar color-b "#000")
 
+      (defun clamp (l m h)
+        (if (< l m)
+            (min m h)
+            (max l m)))
+      
+      (defun sig (n)
+        (/ (1+ (exp (- n)))))
+
+      (defun line (context x1 y1 x2 y2 color)
+        ((@ context begin-path))
+        ((@ context move-to) x1 y1)
+        ((@ context line-to) x2 y2)
+        (setf (@ context stroke-style) color)
+        ((@ context stroke))
+        undefined)
+
+      (defun point (context x y radius color)
+        ((@ context begin-path))
+        ((@ context arc) x y radius 0 (* 2 pi))
+        (setf (@ context fill-style) color)
+        ((@ context fill))
+        undefined)
+      
       (defun cursor-click (event)
         (incf boost 0.003)
         (setf direction (- direction)
@@ -50,7 +50,8 @@
               cursor-y (@ event client-y))
         (psetf color-a color-b
                color-b color-a)
-        (setf (chain canvas style background-color) color-a))
+        (setf (chain canvas style background-color) color-a)
+        undefined)
 
       (labels
           ((draw-tree (time g r x1 y1 x2 y2)
@@ -90,8 +91,6 @@
         (recur (* 100 (/ 60)))))))
 
 (defun render-page (stream)
-  (setf (html-mode) :html5
-        *attribute-quote-char* #\")
   (with-html-output (_ stream :prologue t :indent t)
     (:html :lang "en"
            (:head (:meta :charset "utf-8")
@@ -101,15 +100,19 @@
                            :onclick (ps (cursor-click event)))
                   (:script :src "virtual-paint-stirring-machine.js")))))
 
+(defvar *root*
+  (asdf:system-source-file :ackyak.github.io))
+
 (defun render-all ()
-  (setf (html-mode) :html5
-        *attribute-quote-char* #\"
-        *js-string-delimiter*  #\')
-  (with-open-file (file (merge-pathnames #P"index.html" (asdf:system-source-file :ackyak.github.io))
-                        :direction :output :if-exists :supersede :external-format uiop:*utf-8-external-format*)
+  (with-open-file (file (merge-pathnames #P"index.html" *root*)
+                        :direction :output
+                        :if-exists :supersede
+                        :external-format uiop:*utf-8-external-format*)
     (render-page file))
-  (with-open-file (file (merge-pathnames #P"virtual-paint-stirring-machine.js" (asdf:system-source-file :ackyak.github.io))
-                        :direction :output :if-exists :supersede :external-format uiop:*utf-8-external-format*)
+  (with-open-file (file (merge-pathnames #P"virtual-paint-stirring-machine.js" *root*)
+                        :direction :output
+                        :if-exists :supersede
+                        :external-format uiop:*utf-8-external-format*)
     (render-script file)))
 
 #+(or)
